@@ -2,6 +2,7 @@ import { User } from "../models/user.model.js";
 
 export async function signup(req, res) {
   try {
+    // すべての項目を入力する
     const { email, passoword, username } = req.body;
 
     if (!email || !password || !username) {
@@ -10,6 +11,8 @@ export async function signup(req, res) {
         message: "すべてのフィールドを入力してください",
       });
     }
+
+    // emailRegex
     const emailRefex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(email)) {
@@ -17,13 +20,14 @@ export async function signup(req, res) {
         .status(400)
         .json({ success: false, message: "無効なメールです" });
     }
-
+    // パスワードの長さ
     if (password.length < 6) {
       return res.status(400).json({
         success: false,
         message: "パスワードは６文字以下にしてください",
       });
     }
+    //メールがすでに存在する場合
     const existingUserByEmail = await User.findOne({ email: email });
 
     if (existingUserByEmail) {
@@ -32,16 +36,37 @@ export async function signup(req, res) {
         message: "メールアドレスはすでに存在します",
       });
     }
+    //ユーザー名がすでに存在する場合
+    const existingUserByUsername = await User.findOne({ username: username });
+
+    if (existingUserByUsername) {
+      return res.status(400).json({
+        success: false,
+        message: "ユーザー名はすでに存在します",
+      });
+    }
+
+    //プロフィールアバター
     const PROFILE_PICS = ["/avatar1.png", "/avatar2.png", "/avatar3.png"];
     const image = PROFILE_PICS[Math.floor(Math.random() * PROFILE_PICS.length)];
+
+    //新しいユーザー
     const newUser = new User({
-      email,
-      password,
-      username,
+      email, //email:email,
+      password: hashedPassword,
+      username, //username:username
       image,
     });
 
+    //ユーザーを保存する
     await newUser.save();
+    res.status(201).json({
+      success: true,
+      user: {
+        ...newUser._doc,
+        password: "",
+      },
+    });
   } catch (error) {
     console.log("Signupコントローラーでエラー", error.message);
     res
