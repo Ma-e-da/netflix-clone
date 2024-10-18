@@ -81,9 +81,55 @@ export async function signup(req, res) {
 }
 
 export async function login(req, res) {
-  res.send("Login");
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ success: false, message: "すべて入力してください" });
+    }
+
+    const user = await User.findOne({ email: email });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "正しくありません" });
+    }
+
+    const isPasswordCorrect = await bcryptjs.compare(password, user.password);
+
+    if (!isPasswordCorrect) {
+      return res
+        .status(400)
+        .json({ success: false, message: "正しくありません" });
+    }
+
+    generateTokenAndSetCookie(user._id, res);
+
+    res.status(200).json({
+      success: true,
+      user: {
+        ...user._doc,
+        password: "",
+      },
+    });
+  } catch (error) {
+    console.log("Error in login controller", error.message);
+    res
+      .status(500)
+      .json({ success: false, message: "インターナルサーバーエラー" });
+  }
 }
 
 export async function logout(req, res) {
-  res.send("Logout");
+  try {
+    res.clearCookie("jwt-netflix");
+    res.status(200).json({ success: true, message: "ログアウトしました" });
+  } catch (error) {
+    console.log("Error in logout controller", error.message);
+    res
+      .status(500)
+      .json({ success: false, message: "インターナルサーバーエラー" });
+  }
 }
