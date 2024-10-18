@@ -1,4 +1,5 @@
 import { User } from "../models/user.model.js";
+import bcryptjs from "bcryptjs";
 
 export async function signup(req, res) {
   try {
@@ -45,6 +46,9 @@ export async function signup(req, res) {
         message: "ユーザー名はすでに存在します",
       });
     }
+    //hashedPassoword
+    const salt = await bcryptjs.genSalt(10);
+    const hashedPassword = await bcryptjs.hash(password, salt);
 
     //プロフィールアバター
     const PROFILE_PICS = ["/avatar1.png", "/avatar2.png", "/avatar3.png"];
